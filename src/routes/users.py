@@ -6,7 +6,8 @@
 
 from fastapi import APIRouter, status
 
-from src.dependencies import DataBaseSession
+from src.controllers.user_create import UserCreateController
+from src.dependencies import ControllerType, DataBaseSession
 from src.models.user import UserCreate
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -35,6 +36,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 async def sign_up(
     user: UserCreate,
     session: DataBaseSession,
+    controller: ControllerType[UserCreateController],
 ) -> UserCreate:
     """
     Регистрация нового пользователя.
@@ -42,9 +44,9 @@ async def sign_up(
     Args:
         user: Данные нового пользователя (email и пароль).
         session: Асинхронная сессия базы данных.
+        controller: Контроллер для создания пользователей.
 
     Returns:
         Схема созданного пользователя (пока моковый ответ).
     """
-    _ = session  # Заглушка для линтера
-    return user
+    return await controller(user, session)  # type: ignore[operator, no-any-return]
