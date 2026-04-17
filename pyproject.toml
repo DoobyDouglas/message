@@ -1,0 +1,60 @@
+[tool.poetry]
+name = "messenger-backend"
+version = "0.1.0"
+description = "Backend for messenger"
+authors = ["Unknown"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.136.0"
+uvicorn = "^0.44.0"
+pydantic = {extras = ["email"], version = "^2.13.2"}
+pydantic-settings = "^2.0.0"
+sqlalchemy = "^2.0.49"
+asyncpg = "^0.31.0"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^9.0.3"
+pytest-cov = "^6.0.0"
+httpx = "^0.28.1"
+ruff = "^0.15.11"
+alembic = "^1.14.0"
+pytest-asyncio = "^1.3.0"
+mypy = "^1.15.0"
+
+[tool.pytest.ini_options]
+pythonpath = "."
+testpaths = "tests"
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["I", "F", "E", "W", "UP", "Q"]
+ignore = []
+
+[tool.ruff.format]
+# Дополнительные настройки форматирования
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+strict_equality = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+disallow_incomplete_defs = true
+disallow_untyped_defs = true
+disallow_untyped_decorators = true
+check_untyped_defs = true
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
