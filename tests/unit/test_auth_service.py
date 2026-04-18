@@ -94,7 +94,9 @@ class TestAuthenticationService:
                 mock_settings,
             )()
 
-            with patch("src.services.auth_service.create_access_token") as mock_create_token:
+            with patch(
+                "src.services.auth_service.create_access_token"
+            ) as mock_create_token:
                 expected_token = "test.jwt.token"
                 mock_create_token.return_value = expected_token
 
@@ -201,7 +203,9 @@ class TestAuthenticationService:
         # Проверяем, что сессия создана с правильными данными
         assert session.user_uuid == sample_user.uuid
         assert session.device_info == "Test Device"
-        expected_expires_at = fixed_time + timedelta(days=mock_settings["SESSION_EXPIRE_DAYS"])
+        expected_expires_at = fixed_time + timedelta(
+            days=mock_settings["SESSION_EXPIRE_DAYS"]
+        )
         assert session.expires_at == expected_expires_at
         mock_session.add.assert_called_once_with(session)
         mock_session.commit.assert_awaited_once()
@@ -232,6 +236,6 @@ class TestAuthenticationService:
 
         assert session.user_uuid == sample_user.uuid
         assert session.device_info is None
-        mock_session.add.assert_called_once_with(session)
+        mock_session.add.assert_called_once_with(session)  # type: ignore[unreachable]
         mock_session.commit.assert_awaited_once()
         mock_session.refresh.assert_awaited_once_with(session)

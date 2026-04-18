@@ -4,9 +4,9 @@
 Содержит тесты для создания, верификации и декодирования JWT токенов.
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 from unittest.mock import patch
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
 from jose.exceptions import JWTError
@@ -108,34 +108,35 @@ class TestJWTManager:
         assert isinstance(payload["iat"], int)
 
     def test_verify_token_invalid_secret(
-        self, jwt_manager: JWTManager, mock_settings: dict
+        self, mock_settings: dict
     ) -> None:
         """Тестирует верификацию токена с неверным секретом."""
         user_uuid = uuid4()
         session_uuid = uuid4()
 
+        # Создаем токен с первым секретом
         with patch("src.utils.jwt.get_auth_settings") as mock_get_settings:
             mock_get_settings.return_value = type(
                 "MockSettings",
                 (),
                 mock_settings,
             )()
-
-            token = jwt_manager.create_access_token(
+            jwt_manager1 = JWTManager()
+            token = jwt_manager1.create_access_token(
                 user_uuid=user_uuid,
                 session_uuid=session_uuid,
             )
 
-        # Меняем секрет для верификации
+        # Верифицируем с другим секретом
         with patch("src.utils.jwt.get_auth_settings") as mock_get_settings:
             mock_get_settings.return_value = type(
                 "MockSettings",
                 (),
                 {"JWT_SECRET": "wrong-secret", "JWT_ALGORITHM": "HS256"},
             )()
-
+            jwt_manager2 = JWTManager()
             with pytest.raises(JWTError):
-                jwt_manager.verify_token(token)
+                jwt_manager2.verify_token(token)
 
     def test_verify_token_expired(
         self, jwt_manager: JWTManager, mock_settings: dict
