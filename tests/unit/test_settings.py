@@ -11,7 +11,7 @@ from src.config.settings import DatabaseSettings, get_database_settings
 class TestDatabaseSettings:
     """Тесты настроек базы данных."""
 
-    def test_default_values(self):
+    def test_default_values(self) -> None:
         """Проверка значений по умолчанию."""
         settings = DatabaseSettings()
         assert settings.POSTGRES_USER == "postgres"
@@ -20,13 +20,13 @@ class TestDatabaseSettings:
         assert settings.POSTGRES_HOST == "localhost"
         assert settings.POSTGRES_PORT == 5432
 
-    def test_database_url_default(self):
+    def test_database_url_default(self) -> None:
         """Проверка формирования URL базы данных по умолчанию."""
         settings = DatabaseSettings()
         expected = "postgresql+asyncpg://postgres:postgres@localhost:5432/messenger"
         assert settings.database_url == expected
 
-    def test_database_url_custom(self):
+    def test_database_url_custom(self) -> None:
         """Проверка формирования URL базы данных с кастомными значениями."""
         # Используем model_construct для создания экземпляра без загрузки из окружения
         settings = DatabaseSettings.model_construct(
@@ -39,13 +39,13 @@ class TestDatabaseSettings:
         expected = "postgresql+asyncpg://user:pass@host:1234/db"
         assert settings.database_url == expected
 
-    def test_get_alembic_config(self):
+    def test_get_alembic_config(self) -> None:
         """Проверка получения конфигурации для Alembic."""
         settings = DatabaseSettings()
         config = settings.get_alembic_config()
         assert config == {"sqlalchemy.url": settings.database_url}
 
-    def test_load_from_env(self):
+    def test_load_from_env(self) -> None:
         """Проверка загрузки значений из переменных окружения."""
         with patch.dict(
             os.environ,
@@ -65,7 +65,7 @@ class TestDatabaseSettings:
             assert settings.POSTGRES_PORT == 9999
 
 
-def test_get_database_settings():
+def test_get_database_settings() -> None:
     """Проверка функции get_database_settings с кэшированием."""
     # Первый вызов должен создать экземпляр
     settings1 = get_database_settings()

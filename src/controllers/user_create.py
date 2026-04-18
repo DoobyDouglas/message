@@ -7,7 +7,9 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.controllers.base import BaseController
-from src.models.user import UserCreate
+from src.schemas.api.requests import UserCreate
+from src.schemas.api.responses import UserResponse
+from src.services.user_service import CreateUserService
 
 
 class UserCreateController(BaseController):
@@ -15,7 +17,7 @@ class UserCreateController(BaseController):
     Контроллер создания пользователей.
     """
 
-    async def __create(self, user: UserCreate, session: AsyncSession) -> UserCreate:  # noqa: F841
+    async def __create(self, user: UserCreate, session: AsyncSession) -> UserResponse:
         """
         Создает нового пользователя.
 
@@ -24,11 +26,16 @@ class UserCreateController(BaseController):
             session: Асинхронная сессия базы данных.
 
         Returns:
-            Схема созданного пользователя (заглушка).
+            Схема созданного пользователя.
         """
-        return user
+        service = CreateUserService(session)
+        created_user = await service(user)
+        return UserResponse(
+            email=created_user.email,
+            uuid=str(created_user.uuid),
+        )
 
-    async def __call__(self, user: UserCreate, session: AsyncSession) -> UserCreate:
+    async def __call__(self, user: UserCreate, session: AsyncSession) -> UserResponse:
         """
         Основной метод контроллера, вызываемый из эндпоинта.
 

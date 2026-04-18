@@ -8,8 +8,6 @@ uuid, email, password, а также унаследованные created_at и 
 import uuid
 
 import sqlalchemy as sa
-from pydantic import BaseModel as PydanticBaseModel
-from pydantic import EmailStr, Field
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -40,22 +38,4 @@ class User(BaseModel):
     password: Mapped[str] = mapped_column(
         sa.String(255),
         nullable=False,
-    )
-
-
-class UserCreate(PydanticBaseModel):
-    """Схема для создания пользователя.
-
-    Используется при регистрации нового пользователя.
-    """
-    email: EmailStr = Field(
-        ...,
-        description="Email пользователя",
-        examples=["user@example.com"],
-    )
-    password: str = Field(
-        ...,
-        min_length=8,
-        description="Пароль пользователя (минимум 8 символов)",
-        examples=["securepassword123"],
     )
