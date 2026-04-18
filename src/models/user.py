@@ -15,6 +15,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import BaseModel
 
 if TYPE_CHECKING:
+    from .contact import Contact
     from .session import Session
 
 
@@ -47,6 +48,20 @@ class User(BaseModel):
     sessions: Mapped[list["Session"]] = relationship(
         "Session",
         back_populates="user",
+        lazy="select",
+        cascade="all, delete-orphan",
+    )
+    contacts_owned: Mapped[list["Contact"]] = relationship(
+        "Contact",
+        foreign_keys="Contact.owner_id",
+        back_populates="owner",
+        lazy="select",
+        cascade="all, delete-orphan",
+    )
+    contacts_added: Mapped[list["Contact"]] = relationship(
+        "Contact",
+        foreign_keys="Contact.contact_id",
+        back_populates="contact",
         lazy="select",
         cascade="all, delete-orphan",
     )

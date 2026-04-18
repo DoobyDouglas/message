@@ -5,6 +5,7 @@
 """
 
 from .auth import AuthResponse
+from .contact import ContactResponse
 from .user import UserResponse
 
-__all__ = ["UserResponse", "AuthResponse"]
+__all__ = ["UserResponse", "AuthResponse", "ContactResponse"]

@@ -8,11 +8,12 @@ from fastapi import APIRouter, HTTPException, Response, status
 
 from src.config.settings import get_auth_settings
 from src.controllers.auth_controller import AuthenticationController
+from src.controllers.contact_create import ContactCreateController
 from src.controllers.user_create import UserCreateController
 from src.controllers.user_list import UserListController
 from src.dependencies import ControllerType, CurrentUserUUID, DataBaseSession
 from src.schemas.api.requests import UserCreate, UserLogin
-from src.schemas.api.responses import AuthResponse, UserResponse
+from src.schemas.api.responses import AuthResponse, ContactResponse, UserResponse
 from src.services.auth_service import InvalidPasswordError, UserNotFoundError
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -176,3 +177,72 @@ async def list_users(
     :return: Список схем пользователей.
     """
     return await controller(session)  # type: ignore[operator, no-any-return]
+
+
+@router.post(
+    "/{user_id}/contact",
+    response_model=ContactResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Добавить пользователя в контакты",
+    description=(
+        "Добавляет указанного пользователя (user_id из пути) в контакты "
+        "текущего пользователя. Требуется аутентификация. "
+        "Пользователь не может добавить себя в контакты."
+    ),
+    responses={
+        201: {
+            "description": "Контакт успешно создан",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "uuid": "123e4567-e89b-12d3-a456-426614174000",
+                        "owner_id": "123e4567-e89b-12d3-a456-426614174000",
+                        "contact_id": "123e4567-e89b-12d3-a456-426614174001",
+                        "created_at": "2026-04-18T20:34:59.123456+03:00",
+                        "updated_at": "2026-04-18T20:34:59.123456+03:00",
+                    }
+                }
+            },
+        },
+        400: {
+            "description": "Некорректные данные (неверный формат UUID)",
+        },
+        401: {
+            "description": "Требуется аутентификация",
+        },
+        404: {
+            "description": "Пользователь не найден",
+        },
+        409: {
+            "description": "Контакт уже существует или попытка добавить себя",
+        },
+    },
+)
+async def add_contact(
+    user_id: str,
+    user_uuid: CurrentUserUUID,
+    session: DataBaseSession,
+    controller: ControllerType[ContactCreateController],
+) -> ContactResponse:
+    """
+    Добавить пользователя в контакты.
+
+    :param user_id: UUID пользователя, которого добавляем в контакты
+        (из пути запроса).
+    :param user_uuid: UUID текущего аутентифицированного пользователя
+        (владельца контакта).
+    :param session: Асинхронная сессия базы данных.
+    :param controller: Контроллер для добавления контактов.
+    :return: Схема созданного контакта.
+    """
+    from uuid import UUID
+
+    try:
+        contact_uuid = UUID(user_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Неверный формат UUID",
+        )
+
+    return await controller(contact_uuid, user_uuid, session)  # type: ignore[operator, no-any-return]
