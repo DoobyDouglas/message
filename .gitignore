@@ -69,3 +69,4 @@ docker-compose.override.yml
 
 # Kilo
 .kilo/
+knowledge_base/
