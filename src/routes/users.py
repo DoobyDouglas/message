@@ -9,7 +9,8 @@ from fastapi import APIRouter, HTTPException, Response, status
 from src.config.settings import get_auth_settings
 from src.controllers.auth_controller import AuthenticationController
 from src.controllers.user_create import UserCreateController
-from src.dependencies import ControllerType, DataBaseSession
+from src.controllers.user_list import UserListController
+from src.dependencies import ControllerType, CurrentUserUUID, DataBaseSession
 from src.schemas.api.requests import UserCreate, UserLogin
 from src.schemas.api.responses import AuthResponse, UserResponse
 from src.services.auth_service import InvalidPasswordError, UserNotFoundError
@@ -128,3 +129,53 @@ async def login(
     )
 
     return auth_result  # type: ignore[no-any-return]
+
+
+@router.get(
+    "/",
+    response_model=list[UserResponse],
+    status_code=status.HTTP_200_OK,
+    summary="Получить список пользователей",
+    description=(
+        "Возвращает список всех пользователей системы. Требуется аутентификация."
+    ),
+    responses={
+        200: {
+            "description": "Список пользователей",
+            "content": {
+                "application/json": {
+                    "example": [
+                        {
+                            "email": "user1@example.com",
+                            "uuid": "123e4567-e89b-12d3-a456-426614174000",
+                        },
+                        {
+                            "email": "user2@example.com",
+                            "uuid": "123e4567-e89b-12d3-a456-426614174001",
+                        },
+                    ]
+                }
+            },
+        },
+        401: {
+            "description": "Требуется аутентификация",
+        },
+    },
+)
+async def list_users(
+    user_uuid: CurrentUserUUID,
+    session: DataBaseSession,
+    controller: ControllerType[UserListController],
+) -> list[UserResponse]:
+    """
+    Получить список пользователей.
+
+    Args:
+        user_uuid: UUID текущего пользователя (гарантирует аутентификацию).
+        session: Асинхронная сессия базы данных.
+        controller: Контроллер для получения списка пользователей.
+
+    Returns:
+        Список схем пользователей.
+    """
+    return await controller(session)  # type: ignore[operator, no-any-return]

@@ -223,3 +223,64 @@ async def test_login_without_device_info(
     assert "access_token" in json_response
     assert "session_id" in json_response
     assert "access_token" in response.cookies
+
+
+async def test_list_users_requires_auth(test_client: httpx.AsyncClient) -> None:
+    """
+    Тестирование требования аутентификации для получения списка пользователей.
+
+    Проверяет:
+    - Возвращает ли эндпоинт /users/ статус код 401 без аутентификации
+    """
+    response = await test_client.get("/users/")
+    assert response.status_code == 401
+    json_response = response.json()
+    assert "detail" in json_response
+    assert "Токен аутентификации отсутствует" in json_response["detail"]
+
+
+async def test_list_users_with_auth(
+    test_client: httpx.AsyncClient, unique_email: str
+) -> None:
+    """
+    Тестирование успешного получения списка пользователей с аутентификацией.
+
+    Проверяет:
+    - Возвращает ли эндпоинт /users/ статус код 200 с аутентификацией
+    - Возвращает ли список пользователей, содержащий созданного пользователя
+    """
+    # Создаем пользователя
+    sign_up_data = {
+        "email": unique_email,
+        "password": "securepassword123",
+    }
+    sign_up_response = await test_client.post("/users/sign_up", json=sign_up_data)
+    assert sign_up_response.status_code == 200
+    created_user = sign_up_response.json()
+
+    # Логинимся для получения токена
+    login_data = {
+        "email": unique_email,
+        "password": "securepassword123",
+    }
+    login_response = await test_client.post("/users/login", json=login_data)
+    assert login_response.status_code == 200
+    # Токен автоматически установлен в куки test_client
+
+    # Запрашиваем список пользователей (кука уже содержит токен)
+    response = await test_client.get("/users/")
+    assert response.status_code == 200
+    json_response = response.json()
+    assert isinstance(json_response, list)
+    # Должен быть хотя бы один пользователь (созданный)
+    assert len(json_response) >= 1
+    # Проверяем, что созданный пользователь присутствует в списке
+    user_emails = [user["email"] for user in json_response]
+    assert unique_email in user_emails
+    # Проверяем структуру каждого пользователя
+    for user in json_response:
+        assert "email" in user
+        assert "uuid" in user
+        assert isinstance(user["email"], str)
+        assert isinstance(user["uuid"], str)
+        assert len(user["uuid"]) > 0
