@@ -4,6 +4,8 @@
 Содержит тесты для регистрации, авторизации и управления пользователями.
 """
 
+import uuid as uuid_module
+
 import httpx
 import pytest
 
@@ -145,7 +147,7 @@ async def test_add_contact_user_not_found(
     }
     sign_up_response = await test_client.post("/users/sign_up", json=sign_up_data)
     assert sign_up_response.status_code == 200
-    user = sign_up_response.json()
+    sign_up_response.json()
 
     # Логинимся
     login_data = {
@@ -186,7 +188,7 @@ async def test_add_contact_already_exists(
         "/users/sign_up", json=sign_up_data_owner
     )
     assert sign_up_response_owner.status_code == 200
-    owner = sign_up_response_owner.json()
+    sign_up_response_owner.json()
 
     # Логинимся
     login_data = {
@@ -293,7 +295,8 @@ async def test_add_contact_scenario(
         )
         assert response.status_code == 409
 
-    # Проверка списка пользователей временно отключена из-за проблем с изоляцией транзакций в тестах
+    # Проверка списка пользователей временно отключена из-за
+    # проблем с изоляцией транзакций в тестах
     # response = await test_client.get("/users/list")
     # assert response.status_code == 200
     # users = response.json()
@@ -302,3 +305,229 @@ async def test_add_contact_scenario(
     # assert unique_email in user_emails
     # for contact in contacts:
     #     assert contact["email"] in user_emails
+
+
+async def test_sign_up_with_username(
+    test_client: httpx.AsyncClient, unique_email: str
+) -> None:
+    """
+    Тестирование успешной регистрации пользователя с username.
+    """
+    data = {
+        "email": unique_email,
+        "username": "test_user_" + uuid_module.uuid4().hex[:8],
+        "password": "securepassword123",
+    }
+    response = await test_client.post("/users/sign_up", json=data)
+    assert response.status_code == 200
+    json_response = response.json()
+    assert json_response["email"] == data["email"]
+    assert json_response["username"] == data["username"]
+    assert "uuid" in json_response
+    assert isinstance(json_response["uuid"], str)
+
+
+async def test_sign_up_without_username(
+    test_client: httpx.AsyncClient, unique_email: str
+) -> None:
+    """
+    Тестирование успешной регистрации пользователя без username.
+    """
+    data = {
+        "email": unique_email,
+        "password": "securepassword123",
+    }
+    response = await test_client.post("/users/sign_up", json=data)
+    assert response.status_code == 200
+    json_response = response.json()
+    assert json_response["email"] == data["email"]
+    assert json_response["username"] is None
+    assert "uuid" in json_response
+
+
+async def test_get_user_by_id(
+    test_client: httpx.AsyncClient, unique_email: str
+) -> None:
+    """
+    Тестирование получения пользователя по ID.
+    """
+    # Создаем пользователя
+    sign_up_data = {
+        "email": unique_email,
+        "username": "test_user_" + uuid_module.uuid4().hex[:8],
+        "password": "securepassword123",
+    }
+    sign_up_response = await test_client.post("/users/sign_up", json=sign_up_data)
+    assert sign_up_response.status_code == 200
+    user = sign_up_response.json()
+    user_id = user["uuid"]
+
+    # Логинимся
+    login_data = {
+        "email": unique_email,
+        "password": "securepassword123",
+    }
+    login_response = await test_client.post("/users/login", json=login_data)
+    assert login_response.status_code == 200
+
+    # Получаем пользователя по ID
+    response = await test_client.get(f"/users/{user_id}")
+    assert response.status_code == 200
+    json_response = response.json()
+    assert json_response["email"] == user["email"]
+    assert json_response["username"] == user["username"]
+    assert json_response["uuid"] == user_id
+
+
+async def test_get_user_not_found(
+    test_client: httpx.AsyncClient, unique_email: str
+) -> None:
+    """
+    Тестирование получения несуществующего пользователя по ID.
+    """
+    # Создаем пользователя и логинимся
+    sign_up_data = {
+        "email": unique_email,
+        "password": "securepassword123",
+    }
+    sign_up_response = await test_client.post("/users/sign_up", json=sign_up_data)
+    assert sign_up_response.status_code == 200
+
+    login_data = {
+        "email": unique_email,
+        "password": "securepassword123",
+    }
+    login_response = await test_client.post("/users/login", json=login_data)
+    assert login_response.status_code == 200
+
+    # Пытаемся получить несуществующего пользователя
+    fake_uuid = uuid_module.uuid4()
+    response = await test_client.get(f"/users/{fake_uuid}")
+    assert response.status_code == 404
+    json_response = response.json()
+    assert "detail" in json_response
+    assert "Пользователь не найден" in json_response["detail"]
+
+
+async def test_list_users_with_search(
+    test_client: httpx.AsyncClient, unique_email: str
+) -> None:
+    """
+    Тестирование поиска пользователей по строке.
+    """
+    # Создаем несколько пользователей с разными email и username
+    users_data = []
+    for i in range(3):
+        email = f"user{i}_{uuid_module.uuid4().hex[:8]}@example.com"
+        username = f"user_{i}_{uuid_module.uuid4().hex[:8]}"
+        password = "securepassword123"
+        data = {"email": email, "username": username, "password": password}
+        response = await test_client.post("/users/sign_up", json=data)
+        assert response.status_code == 200
+        users_data.append(response.json())
+
+    # Логинимся одним из пользователей
+    login_data = {
+        "email": users_data[0]["email"],
+        "password": "securepassword123",
+    }
+    login_response = await test_client.post("/users/login", json=login_data)
+    assert login_response.status_code == 200
+
+    # Ищем по части email (регистронезависимо)
+    search_email = users_data[0]["email"].split("@")[0][:4]
+    response = await test_client.get(f"/users/list?search={search_email}")
+    assert response.status_code == 200
+    found_users = response.json()
+    assert len(found_users) >= 1
+    assert any(user["email"] == users_data[0]["email"] for user in found_users)
+
+    # Ищем по части username
+    search_username = users_data[1]["username"][:4]
+    response = await test_client.get(f"/users/list?search={search_username}")
+    assert response.status_code == 200
+    found_users = response.json()
+    assert len(found_users) >= 1
+    assert any(user["username"] == users_data[1]["username"] for user in found_users)
+
+    # Ищем по строке, которая есть и в email и в username
+    search_common = "user"
+    response = await test_client.get(f"/users/list?search={search_common}")
+    assert response.status_code == 200
+    found_users = response.json()
+    assert len(found_users) >= 3
+
+    # Ищем по несуществующей строке
+    response = await test_client.get("/users/list?search=nonexistent")
+    assert response.status_code == 200
+    found_users = response.json()
+    assert len(found_users) == 0
+
+
+async def test_login_with_username_in_response(
+    test_client: httpx.AsyncClient, unique_email: str
+) -> None:
+    """
+    Тестирование успешного входа пользователя с проверкой username в ответе.
+    """
+    # Создаем пользователя с username
+    username = "test_user_" + uuid_module.uuid4().hex[:8]
+    sign_up_data = {
+        "email": unique_email,
+        "username": username,
+        "password": "securepassword123",
+    }
+    sign_up_response = await test_client.post("/users/sign_up", json=sign_up_data)
+    assert sign_up_response.status_code == 200
+    user = sign_up_response.json()
+
+    # Логинимся
+    login_data = {
+        "email": unique_email,
+        "password": "securepassword123",
+    }
+    login_response = await test_client.post("/users/login", json=login_data)
+    assert login_response.status_code == 200
+    json_response = login_response.json()
+
+    # Проверяем, что в ответе есть username
+    assert "user" in json_response
+    assert json_response["user"]["email"] == user["email"]
+    assert json_response["user"]["username"] == username
+    assert json_response["user"]["uuid"] == user["uuid"]
+
+    # Проверяем наличие токена
+    assert "access_token" in json_response
+    assert "session_id" in json_response
+
+
+
+
+
+async def test_get_user_invalid_uuid(
+    test_client: httpx.AsyncClient, unique_email: str
+) -> None:
+    """
+    Тестирование получения пользователя по некорректному UUID.
+    """
+    # Создаем пользователя и логинимся
+    sign_up_data = {
+        "email": unique_email,
+        "password": "securepassword123",
+    }
+    sign_up_response = await test_client.post("/users/sign_up", json=sign_up_data)
+    assert sign_up_response.status_code == 200
+
+    login_data = {
+        "email": unique_email,
+        "password": "securepassword123",
+    }
+    login_response = await test_client.post("/users/login", json=login_data)
+    assert login_response.status_code == 200
+
+    # Пытаемся получить пользователя с некорректным UUID
+    response = await test_client.get("/users/invalid-uuid")
+    assert response.status_code == 400
+    json_response = response.json()
+    assert "detail" in json_response
+    assert "Неверный формат UUID" in json_response["detail"]

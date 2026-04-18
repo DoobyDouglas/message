@@ -55,6 +55,7 @@ class CreateUserService(BaseService):
         hashed_password = self.__hash_password(user_data.password)
         user = User(
             email=user_data.email,
+            username=user_data.username,
             password=hashed_password,
         )
         self._session.add(user)

@@ -18,6 +18,11 @@ class UserResponse(BaseModel):
         description="Email пользователя",
         examples=["user@example.com"],
     )
+    username: str | None = Field(
+        None,
+        description="Имя пользователя (опционально)",
+        examples=["john_doe"],
+    )
     uuid: str = Field(
         ...,
         description="Уникальный идентификатор пользователя",

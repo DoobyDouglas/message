@@ -24,40 +24,34 @@ class AuthenticationController(BaseController):
     """
 
     async def __authenticate(
-        self, login_data: UserLogin, session: AsyncSession
+        self,
+        login_data: UserLogin,
+        session: AsyncSession,
     ) -> AuthResponse:
         """
         Выполняет аутентификацию пользователя.
 
-        Args:
-            login_data: Данные для входа (email, password, device_info).
-            session: Асинхронная сессия базы данных.
-
-        Returns:
-            Ответ аутентификации с токеном и данными пользователя.
-
-        Raises:
-            UserNotFoundError: Если пользователь не найден.
-            InvalidPasswordError: Если пароль неверный.
+        :param login_data: Данные для входа (email, password, device_info).
+        :param session: Асинхронная сессия базы данных.
+        :return: Ответ аутентификации с токеном и данными пользователя.
+        :raise: UserNotFoundError: Если пользователь не найден.
+        :raise: InvalidPasswordError: Если пароль неверный.
         """
         service = AuthenticationService(session)
         return await service(login_data)
 
     async def __call__(
-        self, login_data: UserLogin, session: AsyncSession
+        self,
+        login_data: UserLogin,
+        session: AsyncSession,
     ) -> AuthResponse:
         """
         Основной метод контроллера, вызываемый из эндпоинта.
 
-        Args:
-            login_data: Данные для входа (email, password, device_info).
-            session: Асинхронная сессия базы данных.
-
-        Returns:
-            Ответ аутентификации с токеном и данными пользователя.
-
-        Raises:
-            UserNotFoundError: Если пользователь не найден.
-            InvalidPasswordError: Если пароль неверный.
+        :param login_data: Данные для входа (email, password, device_info).
+        :param session: Асинхронная сессия базы данных.
+        :return: Ответ аутентификации с токеном и данными пользователя.
+        :raise: UserNotFoundError: Если пользователь не найден.
+        :raise: InvalidPasswordError: Если пароль неверный.
         """
         return await self.__authenticate(login_data, session)

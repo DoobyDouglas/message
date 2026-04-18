@@ -4,7 +4,9 @@
 Содержит бизнес-логику получения пользователей из базы данных.
 """
 
-from sqlalchemy import select
+import uuid
+
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.user import User
@@ -27,18 +29,44 @@ class UserReadService(BaseService):
         """
         self._session = session
 
-    async def __call__(self) -> list[UserResponse]:
+    async def __call__(self, search: str | None = None) -> list[UserResponse]:
         """
-        Получает список всех пользователей.
+        Получает список всех пользователей с возможностью поиска.
 
+        :param search: Строка для поиска по email или username (регистронезависимо).
         :return: Список схем пользователей.
         """
         query = select(User)
+        if search:
+            search_pattern = f"%{search}%"
+            query = query.where(
+                or_(
+                    User.email.ilike(search_pattern),
+                    User.username.ilike(search_pattern),
+                )
+            )
         users = await self._session.scalars(query)
         return [
             UserResponse(
                 email=user.email,
+                username=user.username,
                 uuid=str(user.uuid),
             )
             for user in users
         ]
+
+    async def get_user(self, user_uuid: uuid.UUID) -> UserResponse | None:
+        """
+        Получает пользователя по UUID.
+
+        :param user_uuid: UUID пользователя.
+        :return: Схема пользователя или None, если пользователь не найден.
+        """
+        query = select(User).where(User.uuid == user_uuid)
+        if (user := await self._session.scalar(query)) is None:
+            return None
+        return UserResponse(
+            email=user.email,
+            username=user.username,
+            uuid=str(user.uuid),
+        )
