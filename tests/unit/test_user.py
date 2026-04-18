@@ -5,7 +5,7 @@
 import pytest
 from pydantic import ValidationError
 
-from src.models.user import UserCreate
+from src.schemas.api.requests import UserCreate
 
 
 def test_user_create_valid() -> None:

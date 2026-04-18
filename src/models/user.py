@@ -6,14 +6,17 @@ uuid, email, password, а также унаследованные created_at и 
 """
 
 import uuid
+from typing import TYPE_CHECKING
 
 import sqlalchemy as sa
-from pydantic import BaseModel as PydanticBaseModel
-from pydantic import EmailStr, Field
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import BaseModel
+
+if TYPE_CHECKING:
+    from .contact import Contact
+    from .session import Session
 
 
 class User(BaseModel):
@@ -37,25 +40,34 @@ class User(BaseModel):
         nullable=False,
         index=True,
     )
+    username: Mapped[str | None] = mapped_column(
+        sa.String(255),
+        unique=True,
+        nullable=True,
+        index=True,
+    )
     password: Mapped[str] = mapped_column(
         sa.String(255),
         nullable=False,
     )
 
-
-class UserCreate(PydanticBaseModel):
-    """Схема для создания пользователя.
-
-    Используется при регистрации нового пользователя.
-    """
-    email: EmailStr = Field(
-        ...,
-        description="Email пользователя",
-        examples=["user@example.com"],
+    sessions: Mapped[list["Session"]] = relationship(
+        "Session",
+        back_populates="user",
+        lazy="select",
+        cascade="all, delete-orphan",
     )
-    password: str = Field(
-        ...,
-        min_length=8,
-        description="Пароль пользователя (минимум 8 символов)",
-        examples=["securepassword123"],
+    contacts_owned: Mapped[list["Contact"]] = relationship(
+        "Contact",
+        foreign_keys="Contact.owner_id",
+        back_populates="owner",
+        lazy="select",
+        cascade="all, delete-orphan",
+    )
+    contacts_added: Mapped[list["Contact"]] = relationship(
+        "Contact",
+        foreign_keys="Contact.contact_id",
+        back_populates="contact",
+        lazy="select",
+        cascade="all, delete-orphan",
     )
