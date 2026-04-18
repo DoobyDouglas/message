@@ -23,8 +23,7 @@ class UserReadService(BaseService):
         """
         Инициализирует сервис с сессией базы данных.
 
-        Args:
-            session: Асинхронная сессия базы данных.
+        :param session: Асинхронная сессия базы данных.
         """
         self._session = session
 
@@ -32,12 +31,10 @@ class UserReadService(BaseService):
         """
         Получает список всех пользователей.
 
-        Returns:
-            Список схем пользователей.
+        :return: Список схем пользователей.
         """
-        stmt = select(User)
-        result = await self._session.execute(stmt)
-        users = result.scalars().all()
+        query = select(User)
+        users = await self._session.scalars(query)
         return [
             UserResponse(
                 email=user.email,

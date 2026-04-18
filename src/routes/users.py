@@ -132,7 +132,7 @@ async def login(
 
 
 @router.get(
-    "/",
+    "/list",
     response_model=list[UserResponse],
     status_code=status.HTTP_200_OK,
     summary="Получить список пользователей",
@@ -170,12 +170,9 @@ async def list_users(
     """
     Получить список пользователей.
 
-    Args:
-        user_uuid: UUID текущего пользователя (гарантирует аутентификацию).
-        session: Асинхронная сессия базы данных.
-        controller: Контроллер для получения списка пользователей.
-
-    Returns:
-        Список схем пользователей.
+    :param user_uuid: UUID текущего пользователя (гарантирует аутентификацию).
+    :param session: Асинхронная сессия базы данных.
+    :param controller: Контроллер для получения списка пользователей.
+    :return: Список схем пользователей.
     """
     return await controller(session)  # type: ignore[operator, no-any-return]

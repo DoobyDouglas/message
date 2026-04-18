@@ -232,7 +232,7 @@ async def test_list_users_requires_auth(test_client: httpx.AsyncClient) -> None:
     Проверяет:
     - Возвращает ли эндпоинт /users/ статус код 401 без аутентификации
     """
-    response = await test_client.get("/users/")
+    response = await test_client.get("/users/list")
     assert response.status_code == 401
     json_response = response.json()
     assert "detail" in json_response
@@ -268,7 +268,7 @@ async def test_list_users_with_auth(
     # Токен автоматически установлен в куки test_client
 
     # Запрашиваем список пользователей (кука уже содержит токен)
-    response = await test_client.get("/users/")
+    response = await test_client.get("/users/list")
     assert response.status_code == 200
     json_response = response.json()
     assert isinstance(json_response, list)
