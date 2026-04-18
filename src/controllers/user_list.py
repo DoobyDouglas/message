@@ -17,7 +17,9 @@ class UserListController(BaseController):
     """
 
     async def __call__(
-        self, session: AsyncSession, search: str | None = None
+        self,
+        session: AsyncSession,
+        search: str | None = None,
     ) -> list[UserResponse]:
         """
         Основной метод контроллера, вызываемый из эндпоинта.

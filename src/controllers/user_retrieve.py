@@ -19,7 +19,9 @@ class UserRetrieveController(BaseController):
     """
 
     async def __call__(
-        self, session: AsyncSession, user_uuid: uuid.UUID
+        self,
+        session: AsyncSession,
+        user_uuid: uuid.UUID,
     ) -> UserResponse:
         """
         Основной метод контроллера, вызываемый из эндпоинта.
@@ -29,8 +31,7 @@ class UserRetrieveController(BaseController):
         :return: Схема пользователя.
         """
         service = UserReadService(session)
-        user = await service.get_user(user_uuid)
-        if user is None:
+        if (user := await service.get_user(user_uuid)) is None:
             from fastapi import HTTPException, status
 
             raise HTTPException(

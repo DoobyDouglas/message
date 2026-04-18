@@ -63,8 +63,7 @@ class UserReadService(BaseService):
         :return: Схема пользователя или None, если пользователь не найден.
         """
         query = select(User).where(User.uuid == user_uuid)
-        user = await self._session.scalar(query)
-        if user is None:
+        if (user := await self._session.scalar(query)) is None:
             return None
         return UserResponse(
             email=user.email,
