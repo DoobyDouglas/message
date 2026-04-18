@@ -9,7 +9,7 @@ import pytest
 from src.utils.migration import get_alembic_config, run_migrations, run_migrations_sync
 
 
-def test_get_alembic_config():
+def test_get_alembic_config() -> None:
     """Проверяет создание конфигурации Alembic."""
     config = get_alembic_config()
 
@@ -18,7 +18,7 @@ def test_get_alembic_config():
 
 
 @pytest.mark.asyncio
-async def test_run_migrations_success():
+async def test_run_migrations_success() -> None:
     """Проверяет успешное выполнение миграций."""
     with patch("src.utils.migration.command.upgrade") as mock_upgrade:
         # Запускаем миграции
@@ -31,7 +31,7 @@ async def test_run_migrations_success():
 
 
 @pytest.mark.asyncio
-async def test_run_migrations_exception():
+async def test_run_migrations_exception() -> None:
     """Проверяет обработку исключения при выполнении миграций."""
     with patch(
         "src.utils.migration.command.upgrade", side_effect=Exception("Migration error")
@@ -41,7 +41,7 @@ async def test_run_migrations_exception():
             await run_migrations()
 
 
-def test_run_migrations_sync_success():
+def test_run_migrations_sync_success() -> None:
     """Проверяет успешное выполнение синхронных миграций."""
     with patch("src.utils.migration.command.upgrade") as mock_upgrade:
         run_migrations_sync()
@@ -51,7 +51,7 @@ def test_run_migrations_sync_success():
         assert args[0][1] == "head"  # revision
 
 
-def test_run_migrations_sync_exception():
+def test_run_migrations_sync_exception() -> None:
     """Проверяет обработку исключения при выполнении синхронных миграций."""
     with patch(
         "src.utils.migration.command.upgrade",

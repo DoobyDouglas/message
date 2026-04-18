@@ -19,7 +19,8 @@ class TestUsers:
 
         Проверяет:
         - Возвращает ли эндпоинт /users/sign_up статус код 200
-        - Возвращает ли эндпоинт те же данные, что были отправлены
+        - Возвращает ли эндпоинт email и uuid
+        - Не возвращает ли пароль
         """
         data = {
             "email": "newuser@example.com",
@@ -29,7 +30,10 @@ class TestUsers:
         assert response.status_code == 200
         json_response = response.json()
         assert json_response["email"] == data["email"]
-        assert json_response["password"] == data["password"]
+        assert "uuid" in json_response
+        assert isinstance(json_response["uuid"], str)
+        assert len(json_response["uuid"]) > 0
+        assert "password" not in json_response
 
     @pytest.mark.parametrize(
         "data, expected_error_field",

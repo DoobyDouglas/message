@@ -10,6 +10,7 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_async_session
+from src.services.user_service import CreateUserService
 
 DataBaseSession = Annotated[AsyncSession, Depends(get_async_session)]
 
@@ -26,8 +27,25 @@ class ControllerType[ControllerTypeVar]:
         """
         Возвращает аннотированный тип для внедрения зависимости контроллера.
         """
+
         def get_controller() -> ControllerTypeVar:
             return controller_cls()
 
         # Используем cast чтобы mypy принял Annotated как type
         return cast(type, Annotated[controller_cls, Depends(get_controller)])
+
+
+async def get_user_service(session: DataBaseSession) -> CreateUserService:
+    """
+    Зависимость для получения сервиса создания пользователей.
+
+    Args:
+        session: Асинхронная сессия базы данных.
+
+    Returns:
+        Экземпляр CreateUserService с переданной сессией.
+    """
+    return CreateUserService(session)
+
+
+UserServiceDep = Annotated[CreateUserService, Depends(get_user_service)]
