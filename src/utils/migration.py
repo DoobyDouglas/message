@@ -9,7 +9,10 @@ from pathlib import Path
 from alembic import command
 from alembic.config import Config
 
-from src.config.settings import get_database_settings
+from src.config.settings import DatabaseSettings, get_database_settings
+
+# Глобальные настройки базы данных
+database_settings: DatabaseSettings = get_database_settings()
 
 
 def get_alembic_config() -> Config:
@@ -22,7 +25,7 @@ def get_alembic_config() -> Config:
     config = Config(str(alembic_ini_path))
 
     # Устанавливаем URL базы данных из настроек приложения
-    config.set_main_option("sqlalchemy.url", get_database_settings().database_url)
+    config.set_main_option("sqlalchemy.url", database_settings.database_url)
 
     return config
 

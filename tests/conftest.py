@@ -8,7 +8,6 @@
 import asyncio
 from collections.abc import AsyncGenerator, Generator
 from contextlib import asynccontextmanager
-from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -22,13 +21,15 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.pool import NullPool
-from sqlalchemy.sql import text
 
-from src.config.settings import get_database_settings
-from src.database import create_tables, get_async_session
+from src.config.settings import DatabaseSettings, get_database_settings
+from src.database import get_async_session
 from src.models.base import Base
 from src.routes.system import router as system_router
 from src.routes.users import router as users_router
+
+# Глобальные настройки базы данных
+database_settings: DatabaseSettings = get_database_settings()
 
 
 def pytest_configure() -> None:
@@ -50,21 +51,20 @@ def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
 @pytest.fixture(scope="session")
 async def test_engine() -> AsyncGenerator[AsyncEngine, None]:
     """Создает асинхронный движок для тестовой базы данных."""
-    settings = get_database_settings()
     engine = create_async_engine(
-        settings.database_url,
+        database_settings.database_url,
         echo=False,
         future=True,
         poolclass=NullPool,  # Не используем пул для тестов
     )
-    
+
     # Создаем таблицы
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
-    
+
     yield engine
-    
+
     # Закрываем движок после всех тестов
     await engine.dispose()
 

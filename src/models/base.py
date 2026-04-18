@@ -20,6 +20,9 @@ def snake_case_table(cls: Any) -> Any:
     из CamelCase в snake_case.
 
     Если у класса уже задан __tablename__, он не изменяется.
+
+    :param cls: Класс модели.
+    :return: Класс модели с преобразованным именем таблицы.
     """
     if not hasattr(cls, "__tablename__"):
         cls.__tablename__ = camel_to_snake(cls.__name__)
@@ -58,7 +61,6 @@ class BaseModel(Base):
     def __tablename__(cls) -> str:
         """Автоматически генерирует имя таблицы в snake_case на основе имени класса.
 
-        Returns:
-            Имя таблицы в формате snake_case.
+        :return: Имя таблицы в формате snake_case.
         """
         return camel_to_snake(cls.__name__)

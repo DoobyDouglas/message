@@ -11,7 +11,10 @@ from uuid import UUID
 from jose import jwt
 from jose.exceptions import JWTError
 
-from src.config.settings import get_auth_settings
+from src.config.settings import AuthSettings, get_auth_settings
+
+# Глобальные настройки аутентификации
+auth_settings: AuthSettings = get_auth_settings()
 
 
 class JWTManager:
@@ -22,7 +25,7 @@ class JWTManager:
 
     def __init__(self) -> None:
         """Инициализирует менеджер с настройками аутентификации."""
-        self._settings = get_auth_settings()
+        self._settings = auth_settings
 
     def create_access_token(
         self,
@@ -33,20 +36,18 @@ class JWTManager:
     ) -> str:
         """Создает JWT токен доступа.
 
-        Args:
-            user_uuid: UUID пользователя.
-            session_uuid: UUID сессии.
-            expires_delta: Опциональное время жизни токена. Если не указано,
-                используется значение из настроек.
-
-        Returns:
-            Закодированный JWT токен.
+        :param user_uuid: UUID пользователя.
+        :param session_uuid: UUID сессии.
+        :param expires_delta: Опциональное время жизни токена. Если не указано,
+            используется значение из настроек.
+        :return: Закодированный JWT токен.
         """
         to_encode: dict[str, Any] = {
             "sub": str(user_uuid),
             "session": str(session_uuid),
             "type": "access",
         }
+        expire: datetime
         if expires_delta:
             expire = datetime.now(UTC) + expires_delta
         else:
@@ -54,7 +55,7 @@ class JWTManager:
                 minutes=self._settings.ACCESS_TOKEN_EXPIRE_MINUTES
             )
         to_encode.update({"exp": expire, "iat": datetime.now(UTC)})
-        encoded_jwt = jwt.encode(
+        encoded_jwt: str = jwt.encode(
             to_encode,
             self._settings.JWT_SECRET,
             algorithm=self._settings.JWT_ALGORITHM,
@@ -64,17 +65,12 @@ class JWTManager:
     def verify_token(self, token: str) -> dict[str, Any]:
         """Верифицирует JWT токен и возвращает полезную нагрузку.
 
-        Args:
-            token: JWT токен для верификации.
-
-        Returns:
-            Декодированная полезная нагрузка токена.
-
-        Raises:
-            jwt.JWTError: Если токен невалиден или истек.
+        :param token: JWT токен для верификации.
+        :return: Декодированная полезная нагрузка токена.
+        :raise: jwt.JWTError: Если токен невалиден или истек.
         """
         try:
-            payload = jwt.decode(
+            payload: dict[str, Any] = jwt.decode(
                 token,
                 self._settings.JWT_SECRET,
                 algorithms=[self._settings.JWT_ALGORITHM],
@@ -89,11 +85,8 @@ class JWTManager:
         Внимание: Этот метод не проверяет подпись и срок действия токена.
         Используйте только для отладки или случаев, когда токен уже был верифицирован.
 
-        Args:
-            token: JWT токен для декодирования.
-
-        Returns:
-            Декодированная полезная нагрузка токена.
+        :param token: JWT токен для декодирования.
+        :return: Декодированная полезная нагрузка токена.
         """
         return jwt.get_unverified_claims(token)
 

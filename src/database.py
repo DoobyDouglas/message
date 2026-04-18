@@ -14,8 +14,11 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from src.config.settings import get_database_settings
+from src.config.settings import DatabaseSettings, get_database_settings
 from src.models.base import Base
+
+# Глобальные настройки базы данных
+database_settings: DatabaseSettings = get_database_settings()
 
 
 def create_async_engine_from_settings() -> AsyncEngine:
@@ -24,9 +27,8 @@ def create_async_engine_from_settings() -> AsyncEngine:
     Returns:
         Асинхронный движок SQLAlchemy.
     """
-    settings = get_database_settings()
     return create_async_engine(
-        settings.database_url,
+        database_settings.database_url,
         echo=False,
         future=True,
     )

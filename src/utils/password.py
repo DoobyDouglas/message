@@ -18,26 +18,20 @@ class PasswordHasher:
         """
         Хэширует пароль с использованием bcrypt.
 
-        Args:
-            password: Пароль в виде строки.
-
-        Returns:
-            Хэшированный пароль в виде строки.
+        :param password: Пароль в виде строки.
+        :return: Хэшированный пароль в виде строки.
         """
-        salt = bcrypt.gensalt()
-        hashed = bcrypt.hashpw(password.encode("utf-8"), salt)
+        salt: bytes = bcrypt.gensalt()
+        hashed: bytes = bcrypt.hashpw(password.encode("utf-8"), salt)
         return hashed.decode("utf-8")
 
     def verify_password(self, password: str, hashed: str) -> bool:
         """
         Проверяет пароль против хэша.
 
-        Args:
-            password: Пароль для проверки.
-            hashed: Хэшированный пароль.
-
-        Returns:
-            True, если пароль совпадает, иначе False.
+        :param password: Пароль для проверки.
+        :param hashed: Хэшированный пароль.
+        :return: True, если пароль совпадает, иначе False.
         """
         return bcrypt.checkpw(
             password.encode("utf-8"),

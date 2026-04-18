@@ -6,15 +6,18 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-from src.config.settings import get_database_settings
+from src.config.settings import DatabaseSettings, get_database_settings
 from src.models.base import Base
+
+# Глобальные настройки базы данных
+database_settings: DatabaseSettings = get_database_settings()
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
 
 # Устанавливаем URL базы данных из настроек приложения
-config.set_main_option("sqlalchemy.url", get_database_settings().database_url)
+config.set_main_option("sqlalchemy.url", database_settings.database_url)
 
 target_metadata = Base.metadata
 

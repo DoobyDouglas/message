@@ -10,7 +10,7 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.config.settings import get_auth_settings
+from src.config.settings import AuthSettings, get_auth_settings
 from src.models.session import Session
 from src.models.user import User
 from src.schemas.api.requests.auth import UserLogin
@@ -19,6 +19,9 @@ from src.schemas.api.responses.user import UserResponse
 from src.services.base import BaseService
 from src.utils.jwt import create_access_token
 from src.utils.password import PasswordHasher
+
+# Глобальные настройки аутентификации
+auth_settings: AuthSettings = get_auth_settings()
 
 
 class AuthenticationError(Exception):
@@ -50,29 +53,23 @@ class AuthenticationService(BaseService):
         """
         Инициализирует сервис с сессией базы данных.
 
-        Args:
-            session: Асинхронная сессия базы данных.
+        :param session: Асинхронная сессия базы данных.
         """
         self._session = session
         self._password_hasher = PasswordHasher()
-        self._settings = get_auth_settings()
+        self._settings = auth_settings
 
     async def _get_user_by_email(self, email: str) -> User:
         """
         Находит пользователя по email.
 
-        Args:
-            email: Email пользователя.
-
-        Returns:
-            ORM модель пользователя.
-
-        Raises:
-            UserNotFoundError: Если пользователь не найден.
+        :param email: Email пользователя.
+        :return: ORM модель пользователя.
+        :raise: UserNotFoundError: Если пользователь не найден.
         """
         stmt = select(User).where(User.email == email)
         result = await self._session.execute(stmt)
-        user = result.scalar_one_or_none()
+        user: User | None = result.scalar_one_or_none()
         if user is None:
             raise UserNotFoundError(f"Пользователь с email {email} не найден")
         return user
@@ -81,12 +78,9 @@ class AuthenticationService(BaseService):
         """
         Проверяет пароль.
 
-        Args:
-            plain_password: Пароль в открытом виде.
-            hashed_password: Хэшированный пароль.
-
-        Returns:
-            True, если пароль верный, иначе False.
+        :param plain_password: Пароль в открытом виде.
+        :param hashed_password: Хэшированный пароль.
+        :return: True, если пароль верный, иначе False.
         """
         return self._password_hasher.verify_password(plain_password, hashed_password)
 
@@ -96,17 +90,14 @@ class AuthenticationService(BaseService):
         """
         Создает новую сессию для пользователя.
 
-        Args:
-            user: Пользователь, для которого создается сессия.
-            device_info: Информация об устройстве (опционально).
-
-        Returns:
-            Созданная ORM модель сессии.
+        :param user: Пользователь, для которого создается сессия.
+        :param device_info: Информация об устройстве (опционально).
+        :return: Созданная ORM модель сессии.
         """
         expires_at = datetime.now(UTC) + timedelta(
             days=self._settings.SESSION_EXPIRE_DAYS
         )
-        session = Session(
+        session: Session = Session(
             user_uuid=user.uuid,
             expires_at=expires_at,
             device_info=device_info,
@@ -120,15 +111,10 @@ class AuthenticationService(BaseService):
         """
         Выполняет аутентификацию пользователя.
 
-        Args:
-            login_data: Данные для входа (email, password, device_info).
-
-        Returns:
-            Ответ аутентификации с токеном и данными пользователя.
-
-        Raises:
-            UserNotFoundError: Если пользователь не найден.
-            InvalidPasswordError: Если пароль неверный.
+        :param login_data: Данные для входа (email, password, device_info).
+        :return: Ответ аутентификации с токеном и данными пользователя.
+        :raise: UserNotFoundError: Если пользователь не найден.
+        InvalidPasswordError: Если пароль неверный.
         """
         # Находим пользователя
         user = await self._get_user_by_email(login_data.email)
@@ -141,13 +127,13 @@ class AuthenticationService(BaseService):
         session = await self._create_session(user, login_data.device_info)
 
         # Генерируем JWT токен
-        access_token = create_access_token(
+        access_token: str = create_access_token(
             user_uuid=user.uuid,  # type: ignore[arg-type]
             session_uuid=session.uuid,  # type: ignore[arg-type]
         )
 
         # Создаем ответ
-        user_response = UserResponse(
+        user_response: UserResponse = UserResponse(
             email=user.email,
             uuid=str(user.uuid),
         )

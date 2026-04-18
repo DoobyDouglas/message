@@ -24,8 +24,7 @@ class CreateUserService(BaseService):
         """
         Инициализирует сервис с сессией базы данных.
 
-        Args:
-            session: Асинхронная сессия базы данных.
+        :param session: Асинхронная сессия базы данных.
         """
         self._session = session
         self._password_hasher = PasswordHasher()
@@ -34,11 +33,8 @@ class CreateUserService(BaseService):
         """
         Хэширует пароль с использованием PasswordHasher.
 
-        Args:
-            password: Пароль в виде строки.
-
-        Returns:
-            Хэшированный пароль в виде строки.
+        :param password: Пароль в виде строки.
+        :return: Хэшированный пароль в виде строки.
         """
         return self._password_hasher.hash_password(password)
 
@@ -46,14 +42,11 @@ class CreateUserService(BaseService):
         """
         Создает нового пользователя с хэшированным паролем.
 
-        Args:
-            user_data: Данные нового пользователя.
-
-        Returns:
-            Созданная ORM модель пользователя.
+        :param user_data: Данные нового пользователя.
+        :return: Созданная ORM модель пользователя.
         """
-        hashed_password = self.__hash_password(user_data.password)
-        user = User(
+        hashed_password: str = self.__hash_password(user_data.password)
+        user: User = User(
             email=user_data.email,
             password=hashed_password,
         )

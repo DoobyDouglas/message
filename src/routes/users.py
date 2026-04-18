@@ -6,13 +6,16 @@
 
 from fastapi import APIRouter, HTTPException, Response, status
 
-from src.config.settings import get_auth_settings
+from src.config.settings import AuthSettings, get_auth_settings
 from src.controllers.auth_controller import AuthenticationController
 from src.controllers.user_create import UserCreateController
 from src.dependencies import ControllerType, DataBaseSession
 from src.schemas.api.requests import UserCreate, UserLogin
 from src.schemas.api.responses import AuthResponse, UserResponse
 from src.services.auth_service import InvalidPasswordError, UserNotFoundError
+
+# Глобальные настройки аутентификации
+auth_settings: AuthSettings = get_auth_settings()
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -45,15 +48,12 @@ async def sign_up(
     """
     Регистрация нового пользователя.
 
-    Args:
-        user: Данные нового пользователя (email и пароль).
-        session: Асинхронная сессия базы данных.
-        controller: Контроллер для создания пользователей.
-
-    Returns:
-        Схема созданного пользователя.
+    :param user: Данные нового пользователя (email и пароль).
+    :param session: Асинхронная сессия базы данных.
+    :param controller: Контроллер для создания пользователей.
+    :return: Схема созданного пользователя.
     """
-    return await controller(user, session)  # type: ignore[operator, no-any-return]
+    return await controller(user=user, session=session)  # type: ignore[operator, no-any-return]
 
 
 @router.post(
@@ -94,28 +94,20 @@ async def login(
     """
     Вход пользователя в систему.
 
-    Args:
-        user: Данные для входа (email, пароль, опционально информация об устройстве).
-        response: Объект ответа для установки куки.
-        session: Асинхронная сессия базы данных.
-        controller: Контроллер аутентификации.
-
-    Returns:
-        Ответ аутентификации с токеном и данными пользователя.
-
-    Raises:
-        HTTPException: Если email или пароль неверны (код 401).
+    :param user: Данные для входа (email, пароль, опционально информация об устройстве).
+    :param response: Объект ответа для установки куки.
+    :param session: Асинхронная сессия базы данных.
+    :param controller: Контроллер аутентификации.
+    :return: Ответ аутентификации с токеном и данными пользователя.
+    :raise: HTTPException: Если email или пароль неверны (код 401).
     """
     try:
-        auth_result = await controller(user, session)  # type: ignore[operator]
+        auth_result: AuthResponse = await controller(login_data=user, session=session)  # type: ignore[operator]
     except (UserNotFoundError, InvalidPasswordError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Неверный email или пароль",
         )
-
-    # Получаем настройки аутентификации
-    auth_settings = get_auth_settings()
 
     # Устанавливаем куку с JWT токеном
     response.set_cookie(
@@ -127,4 +119,4 @@ async def login(
         samesite=auth_settings.COOKIE_SAMESITE,
     )
 
-    return auth_result  # type: ignore[no-any-return]
+    return auth_result

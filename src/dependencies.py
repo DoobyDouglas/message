@@ -4,7 +4,7 @@
 Содержит общие зависимости, используемые в роутах приложения.
 """
 
-from typing import Annotated, TypeVar, cast
+from typing import Annotated, Any, TypeVar, cast
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, Request, status
@@ -41,11 +41,8 @@ async def get_user_service(session: DataBaseSession) -> CreateUserService:
     """
     Зависимость для получения сервиса создания пользователей.
 
-    Args:
-        session: Асинхронная сессия базы данных.
-
-    Returns:
-        Экземпляр CreateUserService с переданной сессией.
+    :param session: Асинхронная сессия базы данных.
+    :return: Экземпляр CreateUserService с переданной сессией.
     """
     return CreateUserService(session)
 
@@ -59,40 +56,32 @@ def extract_token_from_request(request: Request) -> str | None:
 
     Проверяет куку 'access_token', затем заголовок Authorization (Bearer token).
 
-    Args:
-        request: Запрос FastAPI.
-
-    Returns:
-        JWT токен или None, если токен не найден.
+    :param request: Запрос FastAPI.
+    :return: JWT токен или None, если токен не найден.
     """
     # Проверяем куку
-    token = request.cookies.get("access_token")
+    token: str | None = request.cookies.get("access_token")
     if token:
         return token
 
     # Проверяем заголовок Authorization
-    auth_header = request.headers.get("Authorization")
+    auth_header: str | None = request.headers.get("Authorization")
     if auth_header and auth_header.startswith("Bearer "):
         return auth_header[7:]  # Убираем префикс "Bearer "
 
     return None
 
 
-async def get_current_session_payload(request: Request) -> dict[str, str]:
+async def get_current_session_payload(request: Request) -> dict[str, Any]:
     """
     Зависимость для получения данных текущей сессии из JWT токена.
 
-    Args:
-        request: Запрос FastAPI.
-
-    Returns:
-        Полезная нагрузка JWT токена с полями 'sub' (user_uuid) и
+    :param request: Запрос FastAPI.
+    :return: Полезная нагрузка JWT токена с полями 'sub' (user_uuid) и
         'session' (session_uuid).
-
-    Raises:
-        HTTPException: Если токен отсутствует, невалиден или истек (код 401).
+    :raise: HTTPException: Если токен отсутствует, невалиден или истек (код 401).
     """
-    token = extract_token_from_request(request)
+    token: str | None = extract_token_from_request(request)
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -100,7 +89,7 @@ async def get_current_session_payload(request: Request) -> dict[str, str]:
         )
 
     try:
-        payload = verify_token(token)
+        payload: dict[str, Any] = verify_token(token)
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -118,36 +107,30 @@ async def get_current_session_payload(request: Request) -> dict[str, str]:
 
 
 async def get_current_user_uuid(
-    payload: dict[str, str] = Depends(get_current_session_payload),
+    payload: dict[str, Any] = Depends(get_current_session_payload),
 ) -> UUID:
     """
     Зависимость для получения UUID текущего пользователя.
 
-    Args:
-        payload: Полезная нагрузка JWT токена.
-
-    Returns:
-        UUID текущего пользователя.
+    :param payload: Полезная нагрузка JWT токена.
+    :return: UUID текущего пользователя.
     """
     return UUID(payload["sub"])
 
 
 async def get_current_session_uuid(
-    payload: dict[str, str] = Depends(get_current_session_payload),
+    payload: dict[str, Any] = Depends(get_current_session_payload),
 ) -> UUID:
     """
     Зависимость для получения UUID текущей сессии.
 
-    Args:
-        payload: Полезная нагрузка JWT токена.
-
-    Returns:
-        UUID текущей сессии.
+    :param payload: Полезная нагрузка JWT токена.
+    :return: UUID текущей сессии.
     """
     return UUID(payload["session"])
 
 
 # Аннотированные типы для использования в эндпоинтах
-CurrentSessionPayload = Annotated[dict[str, str], Depends(get_current_session_payload)]
+CurrentSessionPayload = Annotated[dict[str, Any], Depends(get_current_session_payload)]
 CurrentUserUUID = Annotated[UUID, Depends(get_current_user_uuid)]
 CurrentSessionUUID = Annotated[UUID, Depends(get_current_session_uuid)]
