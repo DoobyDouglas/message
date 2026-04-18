@@ -6,6 +6,7 @@
 """
 
 from functools import lru_cache
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -46,7 +47,36 @@ class DatabaseSettings(BaseSettings):
         return {"sqlalchemy.url": self.database_url}
 
 
+class AuthSettings(BaseSettings):
+    """Настройки аутентификации и JWT.
+
+    Все параметры загружаются из переменных окружения с префиксом JWT_.
+    """
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
+    )
+
+    JWT_SECRET: str = "your-secret-key-change-in-production"
+    JWT_ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    SESSION_EXPIRE_DAYS: int = 30
+    COOKIE_SECURE: bool = False
+    COOKIE_SAMESITE: Literal["lax", "strict", "none"] = "lax"
+    COOKIE_HTTPONLY: bool = True
+
+
 @lru_cache(maxsize=1)
 def get_database_settings() -> DatabaseSettings:
     """Возвращает экземпляр настроек базы данных с кэшированием."""
     return DatabaseSettings()
+
+
+@lru_cache(maxsize=1)
+def get_auth_settings() -> AuthSettings:
+    """Возвращает экземпляр настроек аутентификации с кэшированием."""
+    return AuthSettings()

@@ -12,14 +12,12 @@ from fastapi import FastAPI
 
 from src.routes.system import router as system_router
 from src.routes.users import router as users_router
-from src.utils.migration import run_migrations
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Контекстный менеджер для управления жизненным циклом приложения."""
-    # Запуск приложения
-    await run_migrations()
+    # Запуск приложения (миграции выполняются отдельно)
     yield
     # Завершение работы приложения (пока пусто)
 

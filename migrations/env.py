@@ -1,4 +1,5 @@
 import asyncio
+import os
 from logging.config import fileConfig
 
 from alembic import context
@@ -17,6 +18,11 @@ config = context.config
 config.set_main_option("sqlalchemy.url", get_database_settings().database_url)
 
 target_metadata = Base.metadata
+
+# Устанавливаем схему из переменной окружения SCHEMA_NAME, если она задана
+schema_name = os.getenv("SCHEMA_NAME")
+if schema_name:
+    target_metadata.schema = schema_name
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -47,11 +53,16 @@ def run_migrations_offline() -> None:
 
     """
     url = config.get_main_option("sqlalchemy.url")
+    schema_name = os.getenv("SCHEMA_NAME") or target_metadata.schema
+    # Устанавливаем схему в метаданных для Alembic
+    if schema_name:
+        target_metadata.schema = schema_name
     context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        version_table_schema=schema_name,
     )
 
     with context.begin_transaction():
@@ -59,7 +70,16 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection: Connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata)
+    # Получаем схему из переменной окружения или из target_metadata
+    schema_name = os.getenv("SCHEMA_NAME") or target_metadata.schema
+    # Устанавливаем схему в метаданных для Alembic
+    if schema_name:
+        target_metadata.schema = schema_name
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        version_table_schema=schema_name,
+    )
 
     with context.begin_transaction():
         context.run_migrations()
