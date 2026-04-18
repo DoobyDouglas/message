@@ -4,10 +4,11 @@
 Содержит тесты для регистрации, авторизации и управления пользователями.
 """
 
+import httpx
 import pytest
 
 
-def test_sign_up_valid(test_client, unique_email):
+async def test_sign_up_valid(test_client: httpx.AsyncClient, unique_email: str) -> None:
     """
     Тестирование успешной регистрации пользователя.
 
@@ -20,7 +21,7 @@ def test_sign_up_valid(test_client, unique_email):
         "email": unique_email,
         "password": "securepassword123",
     }
-    response = test_client.post("/users/sign_up", json=data)
+    response = await test_client.post("/users/sign_up", json=data)
     assert response.status_code == 200
     json_response = response.json()
     assert json_response["email"] == data["email"]
@@ -43,7 +44,11 @@ def test_sign_up_valid(test_client, unique_email):
         ),
     ],
 )
-def test_sign_up_validation_errors(test_client, data, expected_error_field):
+async def test_sign_up_validation_errors(
+    test_client: httpx.AsyncClient,
+    data: dict[str, str],
+    expected_error_field: str,
+) -> None:
     """
     Тестирование регистрации с ошибками валидации полей.
 
@@ -51,7 +56,7 @@ def test_sign_up_validation_errors(test_client, data, expected_error_field):
     - Возвращает ли эндпоинт статус код 422 при невалидных данных
     - Содержит ли ответ ошибку для ожидаемого поля
     """
-    response = test_client.post("/users/sign_up", json=data)
+    response = await test_client.post("/users/sign_up", json=data)
     assert response.status_code == 422
     json_response = response.json()
     assert expected_error_field in str(json_response).lower()
@@ -70,7 +75,11 @@ def test_sign_up_validation_errors(test_client, data, expected_error_field):
         ),
     ],
 )
-def test_sign_up_missing_fields(test_client, data, expected_error_field):
+async def test_sign_up_missing_fields(
+    test_client: httpx.AsyncClient,
+    data: dict[str, str],
+    expected_error_field: str,
+) -> None:
     """
     Тестирование регистрации с отсутствующими обязательными полями.
 
@@ -78,13 +87,13 @@ def test_sign_up_missing_fields(test_client, data, expected_error_field):
     - Возвращает ли эндпоинт статус код 422 при отсутствии обязательного поля
     - Содержит ли ответ ошибку для ожидаемого поля
     """
-    response = test_client.post("/users/sign_up", json=data)
+    response = await test_client.post("/users/sign_up", json=data)
     assert response.status_code == 422
     json_response = response.json()
     assert expected_error_field in str(json_response).lower()
 
 
-def test_login_valid(test_client, unique_email):
+async def test_login_valid(test_client: httpx.AsyncClient, unique_email: str) -> None:
     """
     Тестирование успешного входа пользователя.
 
@@ -98,7 +107,7 @@ def test_login_valid(test_client, unique_email):
         "email": unique_email,
         "password": "securepassword123",
     }
-    sign_up_response = test_client.post("/users/sign_up", json=sign_up_data)
+    sign_up_response = await test_client.post("/users/sign_up", json=sign_up_data)
     assert sign_up_response.status_code == 200
 
     # Пытаемся войти
@@ -107,10 +116,10 @@ def test_login_valid(test_client, unique_email):
         "password": "securepassword123",
         "device_info": "Test Device",
     }
-    response = test_client.post("/users/login", json=login_data)
+    response = await test_client.post("/users/login", json=login_data)
     assert response.status_code == 200
     json_response = response.json()
-    
+
     # Проверяем структуру ответа
     assert "access_token" in json_response
     assert isinstance(json_response["access_token"], str)
@@ -120,14 +129,16 @@ def test_login_valid(test_client, unique_email):
     assert "uuid" in json_response["user"]
     assert "session_id" in json_response
     assert "expires_in" in json_response
-    
+
     # Проверяем, что установлена кука
     cookies = response.cookies
     assert "access_token" in cookies
     assert cookies["access_token"] == json_response["access_token"]
 
 
-def test_login_invalid_password(test_client, unique_email):
+async def test_login_invalid_password(
+    test_client: httpx.AsyncClient, unique_email: str
+) -> None:
     """
     Тестирование входа с неверным паролем.
 
@@ -140,7 +151,7 @@ def test_login_invalid_password(test_client, unique_email):
         "email": unique_email,
         "password": "securepassword123",
     }
-    sign_up_response = test_client.post("/users/sign_up", json=sign_up_data)
+    sign_up_response = await test_client.post("/users/sign_up", json=sign_up_data)
     assert sign_up_response.status_code == 200
 
     # Пытаемся войти с неверным паролем
@@ -148,17 +159,19 @@ def test_login_invalid_password(test_client, unique_email):
         "email": unique_email,
         "password": "wrongpassword",
     }
-    response = test_client.post("/users/login", json=login_data)
+    response = await test_client.post("/users/login", json=login_data)
     assert response.status_code == 401
     json_response = response.json()
     assert "detail" in json_response
     assert "Неверный email или пароль" in json_response["detail"]
-    
+
     # Проверяем, что кука не установлена
     assert "access_token" not in response.cookies
 
 
-def test_login_user_not_found(test_client, unique_email):
+async def test_login_user_not_found(
+    test_client: httpx.AsyncClient, unique_email: str
+) -> None:
     """
     Тестирование входа с несуществующим пользователем.
 
@@ -170,17 +183,19 @@ def test_login_user_not_found(test_client, unique_email):
         "email": unique_email,
         "password": "anypassword",
     }
-    response = test_client.post("/users/login", json=login_data)
+    response = await test_client.post("/users/login", json=login_data)
     assert response.status_code == 401
     json_response = response.json()
     assert "detail" in json_response
     assert "Неверный email или пароль" in json_response["detail"]
-    
+
     # Проверяем, что кука не установлена
     assert "access_token" not in response.cookies
 
 
-def test_login_without_device_info(test_client, unique_email):
+async def test_login_without_device_info(
+    test_client: httpx.AsyncClient, unique_email: str
+) -> None:
     """
     Тестирование входа без информации об устройстве.
 
@@ -193,7 +208,7 @@ def test_login_without_device_info(test_client, unique_email):
         "email": unique_email,
         "password": "securepassword123",
     }
-    sign_up_response = test_client.post("/users/sign_up", json=sign_up_data)
+    sign_up_response = await test_client.post("/users/sign_up", json=sign_up_data)
     assert sign_up_response.status_code == 200
 
     # Пытаемся войти без device_info
@@ -201,10 +216,10 @@ def test_login_without_device_info(test_client, unique_email):
         "email": unique_email,
         "password": "securepassword123",
     }
-    response = test_client.post("/users/login", json=login_data)
+    response = await test_client.post("/users/login", json=login_data)
     assert response.status_code == 200
     json_response = response.json()
-    
+
     assert "access_token" in json_response
     assert "session_id" in json_response
     assert "access_token" in response.cookies

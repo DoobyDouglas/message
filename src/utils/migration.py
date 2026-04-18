@@ -4,6 +4,7 @@
 Предоставляет функцию для автоматического применения миграций при старте приложения.
 """
 
+import asyncio
 from pathlib import Path
 
 from alembic import command
@@ -30,8 +31,8 @@ def get_alembic_config() -> Config:
 async def run_migrations() -> None:
     """Применяет все ожидающие миграции базы данных."""
     config = get_alembic_config()
-    # Применяем миграции синхронно, дожидаясь завершения
-    command.upgrade(config, "head")
+    # Применяем миграции в отдельном потоке, чтобы избежать конфликта event loop
+    await asyncio.to_thread(command.upgrade, config, "head")
 
 
 def run_migrations_sync() -> None:
