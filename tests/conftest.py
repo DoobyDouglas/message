@@ -119,7 +119,9 @@ async def test_session(test_engine: AsyncEngine) -> AsyncGenerator[AsyncSession,
         session.commit = original_commit  # type: ignore[method-assign]
         session.flush = original_flush  # type: ignore[method-assign]
         # Откатываем транзакцию, отменяя все изменения теста
-        await transaction.rollback()
+        # Проверяем, активна ли ещё транзакция перед откатом
+        if transaction.is_active:
+            await transaction.rollback()
         # Закрываем сессию
         await session.close()
 
@@ -144,7 +146,9 @@ async def test_session_no_mock(
         yield session
     finally:
         # Откатываем транзакцию, отменяя все изменения теста
-        await transaction.rollback()
+        # Проверяем, активна ли ещё транзакция перед откатом
+        if transaction.is_active:
+            await transaction.rollback()
         await session.close()
 
 

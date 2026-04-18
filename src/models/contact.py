@@ -29,19 +29,19 @@ class Contact(BaseModel):
 
     __abstract__ = False
 
-    uuid: Mapped[sa.UUID] = mapped_column(
+    uuid: Mapped[UUID] = mapped_column(  # type: ignore[type-arg, unused-ignore]
         UUID(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4,
         nullable=False,
     )
-    owner_id: Mapped[sa.UUID] = mapped_column(
+    owner_id: Mapped[UUID] = mapped_column(  # type: ignore[type-arg, unused-ignore]
         UUID(as_uuid=True),
         sa.ForeignKey("user.uuid", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
-    contact_id: Mapped[sa.UUID] = mapped_column(
+    contact_id: Mapped[UUID] = mapped_column(  # type: ignore[type-arg, unused-ignore]
         UUID(as_uuid=True),
         sa.ForeignKey("user.uuid", ondelete="CASCADE"),
         nullable=False,

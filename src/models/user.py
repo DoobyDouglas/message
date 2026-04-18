@@ -28,7 +28,7 @@ class User(BaseModel):
 
     __abstract__ = False
 
-    uuid: Mapped[sa.UUID] = mapped_column(
+    uuid: Mapped[UUID] = mapped_column(  # type: ignore[type-arg, unused-ignore]
         UUID(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4,

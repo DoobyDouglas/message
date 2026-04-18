@@ -501,9 +501,6 @@ async def test_login_with_username_in_response(
     assert "session_id" in json_response
 
 
-
-
-
 async def test_get_user_invalid_uuid(
     test_client: httpx.AsyncClient, unique_email: str
 ) -> None:
