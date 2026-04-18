@@ -5,6 +5,7 @@
 """
 
 from .base import Base, BaseModel, snake_case_table
+from .session import Session
 from .user import User
 
-__all__ = ["Base", "BaseModel", "snake_case_table", "User"]
+__all__ = ["Base", "BaseModel", "snake_case_table", "Session", "User"]

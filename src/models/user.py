@@ -6,12 +6,16 @@ uuid, email, password, а также унаследованные created_at и 
 """
 
 import uuid
+from typing import TYPE_CHECKING
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import BaseModel
+
+if TYPE_CHECKING:
+    from .session import Session
 
 
 class User(BaseModel):
@@ -38,4 +42,11 @@ class User(BaseModel):
     password: Mapped[str] = mapped_column(
         sa.String(255),
         nullable=False,
+    )
+
+    sessions: Mapped[list["Session"]] = relationship(
+        "Session",
+        back_populates="user",
+        lazy="select",
+        cascade="all, delete-orphan",
     )
