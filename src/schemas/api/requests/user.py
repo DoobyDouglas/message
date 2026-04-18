@@ -18,6 +18,12 @@ class UserCreate(BaseModel):
         description="Email пользователя",
         examples=["user@example.com"],
     )
+    username: str | None = Field(
+        None,
+        max_length=255,
+        description="Имя пользователя (опционально, уникальное)",
+        examples=["john_doe"],
+    )
     password: str = Field(
         ...,
         min_length=8,

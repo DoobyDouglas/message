@@ -4,13 +4,14 @@
 Содержит эндпоинты для регистрации, авторизации и управления пользователями.
 """
 
-from fastapi import APIRouter, HTTPException, Response, status
+from fastapi import APIRouter, HTTPException, Query, Response, status
 
 from src.config.settings import get_auth_settings
 from src.controllers.auth_controller import AuthenticationController
 from src.controllers.contact_create import ContactCreateController
 from src.controllers.user_create import UserCreateController
 from src.controllers.user_list import UserListController
+from src.controllers.user_retrieve import UserRetrieveController
 from src.dependencies import ControllerType, CurrentUserUUID, DataBaseSession
 from src.schemas.api.requests import UserCreate, UserLogin
 from src.schemas.api.responses import AuthResponse, ContactResponse, UserResponse
@@ -138,7 +139,8 @@ async def login(
     status_code=status.HTTP_200_OK,
     summary="Получить список пользователей",
     description=(
-        "Возвращает список всех пользователей системы. Требуется аутентификация."
+        "Возвращает список всех пользователей системы с возможностью "
+        "поиска по email или username. Требуется аутентификация."
     ),
     responses={
         200: {
@@ -167,6 +169,9 @@ async def list_users(
     user_uuid: CurrentUserUUID,
     session: DataBaseSession,
     controller: ControllerType[UserListController],
+    search: str | None = Query(
+        None, description="Поиск по email или username (регистронезависимо)"
+    ),
 ) -> list[UserResponse]:
     """
     Получить список пользователей.
@@ -174,9 +179,71 @@ async def list_users(
     :param user_uuid: UUID текущего пользователя (гарантирует аутентификацию).
     :param session: Асинхронная сессия базы данных.
     :param controller: Контроллер для получения списка пользователей.
+    :param search: Строка для поиска по email или username.
     :return: Список схем пользователей.
     """
-    return await controller(session)  # type: ignore[operator, no-any-return]
+    return await controller(session=session, search=search)  # type: ignore[operator, no-any-return]
+
+
+@router.get(
+    "/{user_id}",
+    response_model=UserResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Получить пользователя по ID",
+    description=(
+        "Возвращает информацию о конкретном пользователе по его UUID. "
+        "Требуется аутентификация."
+    ),
+    responses={
+        200: {
+            "description": "Данные пользователя",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "email": "user@example.com",
+                        "username": "john_doe",
+                        "uuid": "123e4567-e89b-12d3-a456-426614174000",
+                    }
+                }
+            },
+        },
+        400: {
+            "description": "Неверный формат UUID",
+        },
+        401: {
+            "description": "Требуется аутентификация",
+        },
+        404: {
+            "description": "Пользователь не найден",
+        },
+    },
+)
+async def get_user(
+    user_id: str,
+    user_uuid: CurrentUserUUID,
+    session: DataBaseSession,
+    controller: ControllerType[UserRetrieveController],
+) -> UserResponse:
+    """
+    Получить пользователя по ID.
+
+    :param user_id: UUID пользователя для получения (из пути запроса).
+    :param user_uuid: UUID текущего аутентифицированного пользователя.
+    :param session: Асинхронная сессия базы данных.
+    :param controller: Контроллер для получения пользователя.
+    :return: Схема пользователя.
+    """
+    from uuid import UUID
+
+    try:
+        target_uuid = UUID(user_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Неверный формат UUID",
+        )
+
+    return await controller(session=session, user_uuid=target_uuid)  # type: ignore[operator, no-any-return]
 
 
 @router.post(

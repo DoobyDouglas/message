@@ -149,6 +149,7 @@ class AuthenticationService(BaseService):
         # Создаем ответ
         user_response = UserResponse(
             email=user.email,
+            username=user.username,
             uuid=str(user.uuid),
         )
 

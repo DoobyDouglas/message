@@ -32,6 +32,7 @@ class UserCreateController(BaseController):
         created_user = await service(user)
         return UserResponse(
             email=created_user.email,
+            username=created_user.username,
             uuid=str(created_user.uuid),
         )
 

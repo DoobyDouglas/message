@@ -16,12 +16,15 @@ class UserListController(BaseController):
     Контроллер получения списка пользователей.
     """
 
-    async def __call__(self, session: AsyncSession) -> list[UserResponse]:
+    async def __call__(
+        self, session: AsyncSession, search: str | None = None
+    ) -> list[UserResponse]:
         """
         Основной метод контроллера, вызываемый из эндпоинта.
 
         :param session: Асинхронная сессия базы данных.
+        :param search: Строка для поиска по email или username.
         :return: Список схем пользователей.
         """
         service = UserReadService(session)
-        return await service()
+        return await service(search)

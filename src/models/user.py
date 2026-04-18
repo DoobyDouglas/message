@@ -40,6 +40,12 @@ class User(BaseModel):
         nullable=False,
         index=True,
     )
+    username: Mapped[str | None] = mapped_column(
+        sa.String(255),
+        unique=True,
+        nullable=True,
+        index=True,
+    )
     password: Mapped[str] = mapped_column(
         sa.String(255),
         nullable=False,
