@@ -107,9 +107,7 @@ class TestJWTManager:
         assert isinstance(payload["exp"], int)
         assert isinstance(payload["iat"], int)
 
-    def test_verify_token_invalid_secret(
-        self, mock_settings: dict
-    ) -> None:
+    def test_verify_token_invalid_secret(self, mock_settings: dict) -> None:
         """Тестирует верификацию токена с неверным секретом."""
         user_uuid = uuid4()
         session_uuid = uuid4()
